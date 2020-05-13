@@ -1,0 +1,452 @@
+---
+title: "Tutorial for useing Keras R and Neural Networks for Landuse Classification"
+author: "Nicholas McCarroll"
+date: "4/27/2020"
+output: html_document
+---
+
+## Using Keras in R for Land type classification 
+
+Hello dear reader, welcome to this tutorial on Using Keras in R to automatically classify aerial imagedry into different land cover types. My primary goal of this tutorial is to give you a basic understanding machine learning as well as some code that does the actual task of classification. This code was created by Zia Ahmed, PhD, University at Buffalo and is openly avaliable through GitHub.(https://github.com/zia207/Satellite-Images-Classification-with-Keras-R) This code was originally crafted to classify urban landuse types useing multipectral raster datasets. This dataset has 10 spectral bands that were used to preform the classfication, however for a basic understadning I have gone and altered the code to classify a more rural setting. For this tutorial we will be using a RGB bands of some aeral images that I snagged from google earth. These images are of the Konza Prarie out side of Manhattan KS. We will use this code to classifiy the land cover into three classes, limestone/limestone bolders, grass, adnd large woody vegitiation.
+
+## Machine Learning {.tabset}
+
+### What is Machine Learning?
+
+Machine learning is a sub-field of compture sciences and artifical intellegence that focuses on using using different types of techniques to "teach" or "train" a computure to perform a task. Machine learning is helpful in trying to analysis datasets that are too large for a human to do manually. It is also helpful when the dataset is so complex it is hard for us to understand which variables are controlling the outcomes.It is also helpful with understanding the structure of a dataset that might not be appearent to us humans.
+
+There are three primary branches of the machine, however, for this tutotrial we will only be focusing on one. However, I will quickly mention the other two. Unsupervised learning is a type of machine learning where data is presented to a computer/learning algorithm and it has to find meaningful structure to the data. Generally speaking this type of machine learning is helpful when someone has no idea what the structure of the dataset is. It is also used to find "hidden" structure in datasets that may not be evident to the human observer. Reinforeced learning is where a computer must learn to complete a task in a dyanamic enviroment through trial and error. This could be a task such as getting to the end of a Super Mario level or learning how to get a robot to walk upright. Through a cyclical process of positive and negative feed back the computer learns to preform the task at hand aiming for positive feed back. However in the case of this code we will be using Supervised learning.
+
+
+Supervised learning, Simply put is where a computer is presented with some data that has already be pre-classified. Another way to put it is that the computer is presented with both input and output datasets. The computer has the task of "learn " a general rule or algorithm that can produce similar results to the provided dataset based on the input dataset and trying to match its result to the correct output dataset. In general this process is iterative with the user turning knobs and changing the input variables in order to improve the results of the computer classification.
+
+
+
+### The Basic Supervised Machine Learning Formula
+
+Supervised machine learning is largely iterative. It follows the general structure of inputing data into the machine learning algorithm, letting the computer put the data into groups, then evaluating the computers classification against the known answers or identity  you would want. This is repeated where you make make changes to the way the classification occurs to improve the accuracy with the ultimate goal for the machine learning algorithim to classifiy  accurately an unkown dataset the classifier hasnt seen. What I just descrined is the process of "training". Next I want to outline the process for a more clear description of this processes
+
+**Phase one - Data Submission**
+
+We present a learning algrorithm of whaterver kind our training dataset. There are all kinds of machine learning algorithms that can be used. However, the more instances the more data the classifier has to learn from. 10,000 observations is better at makeing a classifier than 100.
+
+**Phase two - Features**
+
+From the submitted dataset the machine learning algorithm indentifies "features", you can think of them as variable or atributes that we can classifiy indidual instances by. Each instance, observation, can have as many features as need. An example would be if were collecting data on flowers. Each flower you observe would be an "instance" and the charateristics of the flower such as color, number of pettels, or flower size would be the "features".
+
+**Phase three - Classifier construction**
+
+From these features of the machine learning algorithm constructs a set of rules that can classify and predict input data. 
+
+**Phase four - Testing the classifier**
+
+A new, but related, dataset is presented to the classifier that was constructed to evaluate its ability to correctly predict or classify the data. Usally this done with some kind of metric of accuracy.
+
+**Phase five - Repeat**
+
+This process can be repeated based on the accuracy of the results of the classification. If the classification has a low accuracy the classifier can be changed or edited to try and get a better classifcation.
+
+
+This is the fundemental approach that is used in machine learning and that we will use here. 
+
+
+### Some Machine Learning Terminology
+
+In the machine learning community there is some specific terminology that we should be familiar with. 
+
+**Features** - an individual measurable property or characteristic of a phenomenon being observed. EX: Color, Slope, Elevation, size, shape
+
+**Class** - A grouping a data based the value of the features. EX: Forest type, Flower Species, Dog Breed, Landuse Type.
+
+**Classifiers** - The rules or method of classification of data based on a machine learning algorithm. Used to sort data into different classes. EX: Naive Bayes, Support Vectore Machine, Decission Trees, Nureal Network. 
+
+**Instance** - One member of the population of the phenomenon being observed and classified. EX: A pixel from from a Digital Elevation Model or aerial imagedry.
+
+**Training Set** - A porion of the data used by the machine learning alogrothim to construct the classifier.
+
+**Validation Set** - A portion of the data used to validate the classifietrs accuracy 
+
+**Test Set** - A portion of the data used to evaluate the ultimate accuracy of the classifier.
+
+### Setting Up your Computer to use Keras
+
+In order to use this package you may need to install some things to get the code we are going to go through to work. You are going to have to download the keras and kerasR packages into your R library. You will also have to download python due to this code have to have to use some python in its processes. I found that downloading the program manager "Anaconda 3.0" is the easiest route to go (https://www.anaconda.com/products/individual). Also you will have to install a code package know as tensor flow into python via the Anaconda prompt window (https://www.anaconda.com/blog/tensorflow-in-anaconda).
+
+
+The following text is taken directly from the original code and was helpful for my set up. However, if you are running Windows 10 then the base things you will have to do to get this code to work is:
+
+1. Download appropriate code packages for R (keras, kerasR, and Tensorflow)
+
+2. Install Andaconda Navigator
+
+3. Install tensorflow for python via the Andaconda Navigator command promt
+
+
+[keras](https://keras.rstudio.com/) is a popular Python package for deep neural networks with multiple backends, including [TensorFlow](https://www.tensorflow.org/), [Microsoft Cognitive Toolkit (CNTK)](https://docs.microsoft.com/en-us/cognitive-toolkit/), and [Theano](http://deeplearning.net/software/theano/). Two R packages allow you  to use [Keras[(https://keras.rstudio.com/)] from R:  [keras](https://keras.rstudio.com/) and  [kerasR](https://github.com/statsmaths/kerasR). The keras package is able to provide a flexible and feature-rich API and can run both [CPU and GUP version of TensorFlow](https://www.tensorflow.org/install/install_windows) in both Windows and Linux.  If you want to run this tutorial with [GUP version of TensorFlow](https://www.tensorflow.org/install/install_windows) you need following prerequisites in your system:   
+
+*[NVIDIA GUP](https://developer.nvidia.com/cuda-gpus): First, you must make sure weather your computer is running with [NVIDIA® GPU](https://developer.nvidia.com/cuda-gpus) or not. Follow the instruction as described  [here](http://nvidia.custhelp.com/app/answers/detail/a_id/2040/~/identifying-the-graphics-card-model-and-device-id-in-a-pc).  
+
+*[CUDA Toolkit v9.0](https://developer.nvidia.com/cuda-90-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exelocal): If you have an NVIDIA® GPU in your system, you need to download and install [CUDA Toolkit  v9.0](https://developer.nvidia.com/cuda-90-download-archive?target_os=Windows&target_arch=x86_64&target_version=10&target_type=exelocal). Detail installation steps can be found [here](http://nvidia.custhelp.com/app/answers/detail/a_id/2040/~/identifying-the-graphics-card-model-and-device-id-in-a-pc).
+
+*[cuDNN v7.0](https://developer.nvidia.com/cudnn): The download the zip file version [cuDNN v7.0](https://developer.nvidia.com/cudnn) for your CUDA Toolkit v9.0.You need to extract the zip file and add the location where you extracted it to your system PATH.  Detail installation steps can be found here [here](F:\DeepLearning_tutorial\Satellite_Image_Calssification\h20_R_ImageCalssification\keras_R\Detail installation steps are described here). 
+
+Detail installation steps of Keras backend GPU or CUP version of Tensorflow can be found [here](https://tensorflow.rstudio.com/keras/reference/install_keras.html).
+
+
+## The Actual Code Tutorial {.tabset}
+
+Hey there cool cats and kittens, so you've made it through the pre-tutorial tutorial. Thats great I hope that gave you a crash course understanding some of the basics of machine learning and also getting set up to use this code yourself. Now we are going to start and go throug this code and try to better pull away the curtian and understand what is going on with this code in some detail. 
+
+Somethings to keep in minde when going through this code. Machine learning at times can feel very black boxy, that is to say that the classifier works but the actually nuts and bolts are hidden. Machine learning algrothims operate on broad concepts and the code and mathmatics is hidden from us generally. So with that in mind I will explain the concept of the method of classification we will use well enough for you to have an idea what the machine learning is doing in the background. Machine learning may not give you the result you want or the accuracy you may expect. Machine learning has many types of methods of classification and there is no one size fits all classifier or algorthim that workds perfectly on all data. So if you want to use this code for your own end be prepared to think about your dataset and the strengths and weaknesses of the classifier that you choose.
+
+### Introduction to this Code
+This code uses deep neural network for pixel base classifcation via supervised learning. Thats alot to unpack so lets tackle each one. Nerual networks are a set of algorithms, replicating the behavoir of nuerons in the human brain. Neural networks are created to recongnize patterns by interpenting input data and tryin to identify clustering patterns or groups. Deep nerual networkds are "stacked neural networks", just think of a layer cake of neural networks that interact with each other to improve the classification. These layers are composed of nodes, a node is where some kind of computation occurs. This is a modeled after how brains works where a neuron fires when it is exposed to a large enough stimuli. These layers of nodes are stacked ontop of each other and are connected by complex input and output connections. As an input is passed through the neural network nodes will activate and pass this information through the various layers until it is output as a member of a group or cluster. If you want a better and more indepth explination of neural networks check this out (https://www.youtube.com/watch?v=rEDzUT3ymw4)
+
+Pixel based classification is performed on per pixel level. This uses the information for each pixel (i.e. elevation or spectral data) as an instance used as a training example for the classifcation algorithm. The pixels used a a training example would come come with n-number of features, were n is the number of features of interest that would be passed into the classifier for training. For example if you were useing aerial spectral data with 6 spectral bands, your number of features that would be passed to the classifier would be 6. Accordingly the trained classification algorithm would output a class prediction for each individual pixel in an image.
+
+### Part 1 - Data Preparation and Formating
+
+So lets get started. First lets load in all the packages that we will need. Some of these might already be familar to you. 
+
+```{r setup, include=FALSE}
+library(rgdal)
+library(raster)
+library(dplyr)
+library(RStoolbox)
+library(plyr)
+library(keras)
+library(tfruns)
+library(tfestimators)
+library(tensorflow)
+library(kerasR)
+
+```
+Awesome now we are going to load in out primary data sets that we are going to use. We will take a look at them in some detail so we can understand what is going as these datasets are altered and moved around through this code.
+
+```{r load_in}
+####  Load in our datasets
+
+#This is our training data
+point<-read.csv("point_data_konza_updated.csv", header=T)
+
+#This is our test data to evaluate the results of classifier
+grid<-read.csv("grid_data_test_konza.csv",header=T)
+
+```
+Great, lets take a quick look at what the data sets actually look like in more detail. Lets look at the "point" data first since that is our training data.
+
+```{r header_points}
+#Lets get a sence of the dataset using the header function
+
+head(point)
+
+#Also while we are at it lets look at the size of the dimmensions of the dataset
+dim(point)
+
+```
+
+Well it looks like we have a dataset that is 1010 rows by 8 columns. Looks like there are x and y coorinates. These are arbitrary just for your information, I just loaded some pictures into ArcGIS to create these fomated input data. We also have some columns having to do with "class". These are instances that have been preclassified for training purposes. We can see that there are 5 classes. These classes represent land cover type. We can see that there is a describition of what these classes are as well. We have three features "B1. B2, and B3". These are the RGB color bands that is common to aerial photography. These are the three features that are classifier will use to determine the "class" of a pixel. 
+
+Now lets take a look at the grid data. 
+
+```{r header_grid}
+#Lets get a sence of the dataset using the header function
+
+head(grid)
+
+#Also while we are at it lets look at the size of the dimmensions of the dataset
+dim(grid)
+
+```
+
+WOW! This is a much larger data set! Why is that? Well the training dataset is simply selected point, while the grid data is an entire raster worth of values. We can see that these data set is not classified. It is simply the x and y data that will be useful for plotting our results of classification later as well as, the three spectral bands that are going to be the basis of our classification
+
+```{r formating_cleaning}
+#### Create a data frame and clean the data
+#We want to make sure the data is in the form a dataframe
+#We are also only selecting out the 
+
+point.df<-cbind(point[c(4:6)],Class_ID=point$Class_ID)
+grid.df<-cbind(grid[c(4:6)])
+grid.xy<-grid[c(3,1:2)]
+```
+
+Now just to keep track on what is going on here lets take a look at our data again.
+```{r close_look_formated1}
+#Lets look at what exactly were are doing here with the data
+head(point.df)
+```
+
+Looks like we selected out the columns that are going to be used for training our classifier to do its job. Since we only need the color band features and the class of each instance we can ignore the xy information or the extra class information. Now you may be saying "That xy data might be important!" And you may be right for a different classification goal, but since we are only basing the land use designation on the color band data the xy data can be ignored for teaching our classfier to do its job. However, if we were trying to classify something that may be classified based on its location the xy data could be important in our classification.
+
+
+```{r close_look_formated2}
+#Lets look at the grid data
+head(grid.df)
+
+head(grid.xy)
+```
+
+Looks like we seperated out the color band data and the xy coordinates. This will come in handy later. Spoiler alert, like the training data for training our classifier, the classifer only cares about the band data to assign a classfication for each pixel. So we only want to pass the classifier the band data (also the classifier will freak out if we hand it both the band data and the xy data). However, we will rejoin up the two portions of the dataset after classification.
+
+
+```{r formmating_3}
+#### Convert Class to dummay variables
+
+#We are converting the class id to a number as also changing the class number to match the python method indexing.
+point.df[,4] <- as.numeric(point.df[,4]) - 1
+
+#Lets take a look.
+head(point.df)
+
+
+```
+
+So by doing this we have changed the class ID's to just numbers. We also subtracted 1 from all the number designations. This will be helpful when we have to talk to python later. Python indexes and counts slightly different than other programs, instead of starting at 1, python starts at 0. Weird huh? But by doing this we are going to avoid some headaches later.
+
+
+```{r formating_4}
+#### Convert data as matrix
+point.df<- as.matrix(point.df)
+grid.df <- as.matrix(grid.df)
+head(point.df)
+
+#### Set  `dimnames` to `NULL`
+#We want to simplify the dataset as much as possible before presenting it to the neural net classifier.
+dimnames(point.df) <- NULL
+dimnames(grid.df) <- NULL
+head(point.df)
+
+```
+Here we have removed the headers of the columns and are just left with the indexing values. But since we are all good little coders we know exactly what is going on and what is what in this formated dataset. Now finally we want to finish up this formating by standardizing our dataset. This is a good habit to get into when preforming machine learning. It can prevent some errors that may arise when presenting the data to the machine learning algorithm. This may not be a problem here but it is a good habit to get into.
+
+
+```{r formating_5}
+#### Standardize_the data ((x-mean(x))/sd(x))
+point.df[, 1:3] = scale(point.df[, 1:3])
+grid.df[, 1:3] = scale(grid.df[, 1:3])
+head(point.df)
+
+```
+
+Awesome! Now that we have done all this we have set ourselves up nicely for the next step....setting up our classifier. Oh wait, I forgot one final step. Lets split up the data into our training and test sets. 
+
+```{r formation_test_and_val}
+### Split data 
+##  Determine sample size
+ind <- sample(2, nrow(point.df), replace=TRUE, prob=c(0.60, 0.40))
+# Split the `Split data
+training <- point.df[ind==1, 1:3]
+test <- point.df[ind==2, 1:3]
+# Split the class attribute
+trainingtarget <- point.df[ind==1, 4]
+testtarget <- point.df[ind==2, 4]
+
+```
+
+Basically we took the training data and did a 60/40 split so that 60 percent of the data is used for building the classifier and 40 will be used to evaluate the accuracy of the classifier after its has been constructed. Now we are ready to move on to build our classifier.
+
+
+### Part 2 - Setting Up the Nerual Net and Classifier
+
+Now we will turn to setting up the classifier we are going to feed our training data to. However the orginal author of this code, 
+Zia Ahmed, PhD, has done the heavey lifting for us. To be honest setting up a model and its parameters can be a bit black boxy, so my goal here will be not so much to explain why certain values or functions were choosen but explain the general procedure and thinking begind the creation of a classifier. A general rule of thumb is that a classifier has parameters that can be defined to help improve the accuracy of the process. Alot of classifiers have alot of knobs you can turn and values you can change to better calibrate you classifier. In the case of building a deep neural network some of the parameters that can be defined are the number of layers, the number of nodes per layer, and the number of clusters the input data can be grouped into. Some of the other parameters that are defined here are the drop out rate, which is to prevent over fitting of the classifier and the activation fuction which defines how a node repsonds to the value of the input data.
+```{r model, message=F, warning=F}
+#### Hyperparameter flag
+
+#These are the parameters are used for the model to prevent over fitting of the classifier to the training data
+FLAGS <- flags(
+  flag_numeric('dropout_1', 0.2, 'First dropout'),
+  flag_numeric('dropout_2', 0.2, 'Second dropout'),
+  flag_numeric('dropout_3', 0.1, 'Third dropout'),
+  flag_numeric('dropout_4', 0.1, 'Forth dropout')
+)
+
+### Define model parameters with 4 hidden layers with 200 neuron
+#Here we are creating the neural network. We are defineing the number of nodes, number of layers, as well as the function that gonvers the activation of each node.
+#We can see that for each layer of the neural net we can control how it behaves as well as the structure of each. For learning purposes just accept that these parameters are a black box. However, using this basic structure you could create  your own neural network. 
+#We also see the there is a regularizer. Regularizers allow to apply penalties on layer parameters or layer activity during optimization. These penalties are incorporated in the loss function that the network optimizes.
+
+model <- keras_model_sequential() # Imput layer
+model %>% layer_dense(units = 200, activation = 'relu', 
+          kernel_regularizer =regularizer_l1_l2(l1 = 0.00001, l2 = 0.00001),input_shape = c(3)) %>% 
+          layer_dropout(rate = FLAGS$dropout_1,seed = 1) %>% 
+  # Hidden layers
+  layer_dense(units = 200, activation = 'relu',
+              kernel_regularizer = regularizer_l1_l2(l1 = 0.00001, l2 = 0.00001)) %>%
+  layer_dropout(rate = FLAGS$dropout_2,seed = 1) %>%
+  layer_dense(units = 200, activation = 'relu',
+              kernel_regularizer = regularizer_l1_l2(l1 = 0.00001, l2 = 0.00001)) %>%
+  layer_dropout(rate = FLAGS$dropout_3,seed = 1) %>%
+  layer_dense(units = 200, activation = 'relu',
+              kernel_regularizer = regularizer_l1_l2(l1 = 0.0001, l2 = 0.00001)) %>%
+  layer_dropout(rate = FLAGS$dropout_4) %>%
+  # Output layer
+  layer_dense(units = 5, activation = 'softmax')
+
+
+#Lets take a look 
+summary(model)
+```
+So here we can see the basic structure of the neural net. We can see that four of the layers has 200 nodes the feed into each sucessive layer, each node of one level is connected to every other node of the next. We can see the output layer only has five nodes, each node representing one of the classes we want the classifier to predict based on input data. The Parameter number represents the number of relationships that can be tweaked as the model is trained. We can see that all the parameters in this model are trainable, that is changed to improve classification accuracy. However, one the face of this one pass of the data will not produce the best accuracy. Therefore we will need to define some way to improve the accuracy of the model through an iterative process. Therefore we need to define a optimizer that will allow to improve our model automatically.
+
+Now that we have established the basic archicture of our classifier we want to estabish a way to make it as accurate as possible. In machine learning world there is indeed a way to do this in an automatic fashion, we can do this via an optimizer. Optimizers can be a bit of a black box, like alot of things related to machine learning. But in general an optimizer is a method by which you can increase the fit of your model of classifier to the data, in particular data the has custering behavoir in it. In the case of this code a Stoicasitc gradient desent optimizer is used (https://www.youtube.com/watch?v=vMh0zPT0tLI). There are many types of optimizers that can be used, but the one choosen for this classification is useful for large datasets. The main take away is that by implementing an optimizer you can increase the accuracy of your machine learning classifier.
+```{r optimized_and_compile_model}
+
+#### Define an optimizer (Stochastic gradient descent optimizer)
+#Here is the optimizer, with its parameters.
+#lr = learning rate: the rate at which the optimizer "learns" and attempts to increase the accuracy per iteration
+#decay = The change of learning rate per iteration. This value is subtracted from the learn rate each iteration
+#momentum = A acurracy value that the optimizer is pointed to so model accuracy can be optimized to that value. It also is used to dampend ossilations in accuracy and loss during optimization
+optimizer <- optimizer_sgd(lr=0.01, decay=1e-6, momentum=0.9)
+
+#### Compile the model
+#Here our model/classifier is put together in its final form before being feed training data
+model %>% compile(
+  loss = 'sparse_categorical_crossentropy',
+  optimizer = optimizer,
+  metrics = 'accuracy')
+
+
+
+```
+
+Now that we have the model build and the optimizer defined we can move on and actually train and evaluate the classifier.
+
+### Part 3 - Training and Model Accuracy Evalulation
+So now we want to train our model using the training set of input data. Here we see that we are going to be fitting our model/classifier to the data we provide it. We are also going to do 100 iterations of training with 100 randomly selected points from the training data. We are are also going to save 20% of this data to validiate and asses the accuracy at each iteration.
+
+```{r traing, include = FALSE}
+####  Fit the model to the data 
+#We are going to store the results of this process in a variable of "histroy" so it can be looked at later.
+#Note the training target are the target classes that are the "answers" to the classification
+history<-model %>% fit(
+  training, trainingtarget, 
+  epochs = 100, 
+  batch_size = 100, 
+  shuffle = TRUE,
+  validation_split = 0.2,
+  callbacks = callback_tensorboard()
+)
+
+```
+
+Alright now that we have fed the neural net we set up with the training data we lets look at the process of fitting and makeing the model more accurate. Lets plot the "history" of the model fitting and give it a look. We can see that for each iteration or "epoch" the accuracy increase quickly and then slowly over time. This is really what you want to focus on, this plot just shows that indeed the process of optimization does increase the model's predictive accuracy. Going from ~30% to almost 100% accuracy.
+
+```{r evaluation1}
+
+### Plot history
+
+plot(history)
+
+```
+
+Now lets use a test set to indepenently quanitfy the accuaracy of out classifier. We are going to use a model scoring function as well as a confusion matrix. First let's look at the scoring fuction since  that seems simpler.
+```{r evaluation2}
+#### Evaluate the model
+score <- model %>% evaluate(test, testtarget, batch_size = 100)
+cat('Test loss:', score[[1]], '\n')
+cat('Test accuracy:', score[[2]], '\n')
+```
+Well looks like our accuracy for the model is ~98%. Conserdering machine learning thats pretty good considering that we are only giving the model three features to base the classification on.However such a high accuracy may make us suspicious of over fitting. However, well just asume thats not happening. Many times you want to find the sweet spot of the number of features to use in classification.  Too few features and you do not have enough information to accurately classfiy, yet too many actually degrades the accuracy of the classifcation. Now let us take a look at the confusion matrix to try and understanding what is impacting the accuracy of our model predictions.
+
+```{r evaluation3}
+#### Prediction & confusion matrix - test data
+class.test <- model %>%
+  predict_classes(test, batch_size = 100)
+table(testtarget,class.test)
+
+#### Predicted Class Probability
+
+prob.test <- model %>%
+  predict_proba(test, batch_size = 100)
+
+```
+So what you are looking at above is a confusion matrix. First the numbers along the diagonal of the matix are the instances that are correctly classified. Values above or below this diagonal are instances that were mis-classified and are introducing uncertainty to our classification. The misclassified values below the diagonal are type one errors while those above the diagonal are type two errors. The column on the left hand side (testtarget) are the correct answers, while the row at the top (class.test) are the designation the model gave the instances when asked to classify them. Looks like you are getting alot of miss classification of "classes" 0 and 1 are the most miss classified instances. These are the classes Ls blocks and Grass.
+
+### Part 4 - Apply the model to an Image
+
+So now that a classifier has been created and we have evaluated it accuracy the next logical step would be to apply to a new image. Now we will bring back the "grid" data set that we formated back up at the beginning. So first thing is first we need to run the grid data through our classifier and have it apply the classes.
+
+```{r new_classification1}
+#### Prediction at grid data
+#Running the grid data into the classifier
+Class.grid <- model %>%
+  predict_classes(grid.df, batch_size = 100)
+
+#### Detach keras, tfruns, tftestimators
+#Just to help with processing
+detach(package:keras, unload=TRUE)
+detach(package:tfruns, unload=TRUE)
+detach(package:tfestimators, unload=TRUE)
+```
+
+Next we are going to plot up the results of this new classification. First the data needs to have its cooridnates reattached for plotting.
+
+```{r reclass}
+#### Change column name
+#We are binding the xy data that we seperated out in the begining back to the newly classified data.
+class<-as.data.frame(Class.grid)
+new.grid<-cbind(x=grid.xy$x, y=grid.xy$y,Class_ID=class )
+names(new.grid)
+colnames(new.grid)[3]<-"Class_ID"
+new.grid.na<-na.omit(new.grid)
+
+#### Load ID file
+
+#### Join Class Id Column
+#We are loading into a file that has a conversion from the deisgnated classes to our orginal classes
+ID<-read.csv("Landuse_ID_konza_updated.csv", header=TRUE)
+ID
+
+```
+
+Now we can plot the data up and examine how the classifier did.
+
+```{r plotting}
+
+#### Convert to raster
+#Now we can plot our data and get a look at how it does
+x<-SpatialPointsDataFrame(as.data.frame(new.grid.na)[, c("x", "y")], data = new.grid.na)
+r <- rasterFromXYZ(as.data.frame(x)[, c("x", "y", "Class_ID")])
+
+myPalette <- colorRampPalette(c("grey","green", "darkgreen"))
+spplot(r,"Class_ID",  
+       colorkey = list(space="right",tick.number=1,height=1, width=1.5,
+                       labels = list(at = seq(0,3.8,length=5),cex=1.0,
+                                     lab = c("Class-1 (Limestone/Bolder)" ,
+                                             "Class-2 (Grass)", "Class-3 (Vegitation)"))),
+       col.regions=myPalette,cut=4)
+writeRaster(r,"predicted_Landuse.tiff","GTiff",overwrite=TRUE)
+
+```
+
+Now lets compare this classification to the actual aeral phtograph.
+
+```{r photo}
+myJPG <- stack("C:/Users/nmccarroll13/Desktop/R_final_project_data/Training_pic_for_training_points.JPG")  
+plotRGB(myJPG)
+
+```
+
+Wow! Looks like its done an alright job. However it looks like it has classified the dirt road/trail as limestone/bolders. It seems like some areas that are grass were mistakenly classified as Limestone or as Large Woody Vegitation. This might be because the RGB values are too similar to each other. However it looks like we are able to get a alright classification. Again this code was orginially set up to work on a dataset supported by a robust spectral dataset so by reducing the number of features to classify the classification wont be as accurate. However we see that we can apply this classifier once trained with robust training data to accurately classify new areas of interest. 
+
+### Final Thoughts and other Resources
+
+The use of machine learning to classifying land use or land cover type can be a usefulway to quickly map out areas of interests remotely. This method can be a powerful tool for both research and practical purposes. Machine learning can be applied to many different types of problems and this type of classifier might not be the best one for your exact research needs. There are other types of supervised machine learning techinques that can be used to do this type of classification. However, Keras is a robust way to do neural network classification directly in R. 
+
+This code is an example of the power of machine learning in the area of classifying data based on n number of features. This code demostrates the basic structure of the process of machine learning and its applications to mapping based on different variables. However machine learning, espcially intially, can be a black box to a new user. Espically in the case of this code, neural networking can be extremely obtuse without a more fundimental knoweledge of the method. However, I hope this more indepth tutorial will give you basic understading of this use of machine learning and neural networks.
+
+
+If you want acesses to the orginal code and datasets for this classification code:
+
+(https://github.com/zia207/Satellite-Images-Classification-with-Keras-R)
+
+If you want to know about: 
+
+Machine Learning (https://en.wikipedia.org/wiki/Machine_learning)
+
+Deep Neural Network (https://en.wikipedia.org/wiki/Deep_learning) 
+
+Pixel based classification (https://gis.stackexchange.com/questions/237461/distinction-between-pixel-based-and-object-based-classification)
+
